@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Resume Analyzer</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 16px;
+            width: 450px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #38bdf8;
+        }
+
+        .upload-box {
+            border: 2px dashed #38bdf8;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upload-box:hover {
+            background: rgba(56,189,248,0.1);
+        }
+
+        .dragover {
+            background: rgba(34,197,94,0.2);
+            border-color: #22c55e;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-list {
+            text-align: left;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .file-item {
+            background: #334155;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-btn {
+            background: #ef4444;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .count {
+            margin-top: 10px;
+            color: #22c55e;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: #334155;
+            color: white;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: #38bdf8;
+            color: #0f172a;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>AI Resume Analyzer 🚀</h1>
+
+    <form action="/analyze" method="post" enctype="multipart/form-data">
+
+        <!-- 🔥 DRAG & DROP -->
+        <div class="upload-box" id="dropArea">
+            Drag & Drop Resumes OR Click to Upload
+            <input type="file" name="resume" id="fileInput" multiple required>
+        </div>
+
+        <div class="count" id="fileCount"></div>
+        <div class="error" id="errorMsg"></div>
+        <div class="file-list" id="fileList"></div>
+
+        <!-- JOB DESCRIPTION -->
+        <textarea name="job_desc" rows="4"
+        placeholder="Enter Job Description..." required></textarea>
+
+        <button type="submit" onclick="this.innerText='Analyzing...';">
+            Analyze 🚀
+        </button>
+
+    </form>
+</div>
+
+<script>
+const dropArea = document.getElementById("dropArea");
+const input = document.getElementById("fileInput");
+const list = document.getElementById("fileList");
+const count = document.getElementById("fileCount");
+const errorMsg = document.getElementById("errorMsg");
+
+let selectedFiles = [];
+
+// Click upload
+dropArea.addEventListener("click", () => input.click());
+
+// Drag events
+dropArea.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropArea.classList.add("dragover");
+});
+
+dropArea.addEventListener("dragleave", () => {
+    dropArea.classList.remove("dragover");
+});
+
+dropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropArea.classList.remove("dragover");
+    handleFiles(e.dataTransfer.files);
+});
+
+// File select
+input.addEventListener("change", () => {
+    handleFiles(input.files);
+});
+
+function handleFiles(files) {
+    errorMsg.innerText = "";
+
+    for (let file of files) {
+        // 🔥 File size validation (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            errorMsg.innerText = "File too large (max 2MB): " + file.name;
+            continue;
+        }
+
+        selectedFiles.push(file);
+    }
+
+    updateUI();
+}
+
+function updateUI() {
+    list.innerHTML = "";
+    count.innerText = selectedFiles.length + " resume(s) selected";
+
+    selectedFiles.forEach((file, index) => {
+        let div = document.createElement("div");
+        div.className = "file-item";
+
+        div.innerHTML = `
+            📄 ${file.name}
+            <button class="remove-btn" onclick="removeFile(${index})">❌</button>
+        `;
+
+        list.appendChild(div);
+    });
+
+    // 🔥 Sync with input
+    let dataTransfer = new DataTransfer();
+    selectedFiles.forEach(file => dataTransfer.items.add(file));
+    input.files = dataTransfer.files;
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    updateUI();
+}
+</script>
+
+</body>
+</html>

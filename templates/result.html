@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Resume Results</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI';
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f1f5f9;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 20px;
+            color: #38bdf8;
+        }
+
+        .card {
+            background: #1e293b;
+            margin: 20px auto;
+            padding: 25px;
+            width: 80%;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: scale(1.01);
+        }
+
+        .rank {
+            color: #22c55e;
+        }
+
+        .top {
+            border: 2px solid gold;
+        }
+
+        .info {
+            margin: 10px 0;
+            color: #cbd5f5;
+        }
+
+        .highlight {
+            color: #facc15;
+            font-weight: bold;
+        }
+
+        .score-bar {
+            background: #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .score-fill {
+            height: 20px;
+            width: 0%;
+            background: linear-gradient(to right, #38bdf8, #22c55e);
+            transition: 1s;
+        }
+
+        .section {
+            margin-top: 15px;
+        }
+
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            margin: 4px 0;
+        }
+
+        .missing {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .metrics-card {
+            background: #020617;
+            margin: 30px auto;
+            padding: 20px;
+            width: 80%;
+            border-radius: 15px;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 30px auto;
+            padding: 12px 25px;
+            background: #38bdf8;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background: #0ea5e9;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🏆 AI Resume Ranking Dashboard</h1>
+
+{% for r in results %}
+<div class="card {% if loop.index == 1 %}top{% endif %}">
+
+    <h2 class="rank">Rank {{ loop.index }} - {{ r.filename }}</h2>
+
+    <!-- Basic Info -->
+    <div class="info">👤 {{ r.name }}</div>
+    <div class="info">📧 {{ r.email }} | 📱 {{ r.phone }}</div>
+
+    <!-- Scores -->
+    <div class="section">
+        <h3>Resume Score: {{ r.score }}%</h3>
+        <div class="score-bar">
+            <div class="score-fill" data-value="{{ r.score }}"></div>
+        </div>
+
+        <h3>ATS Score: {{ r.ats_score }}%</h3>
+        <div class="score-bar">
+            <div class="score-fill" data-value="{{ r.ats_score }}"></div>
+        </div>
+    </div>
+
+    <!-- Prediction -->
+    <div class="section">
+        <h3>Prediction: <span class="highlight">{{ r.final_prediction }}</span></h3>
+    </div>
+
+    <!-- Roles -->
+    <div class="section">
+        <h3>🎯 Recommended Roles</h3>
+        <ul>
+            {% for role in r.top_roles %}
+            <li class="highlight">{{ role }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Skills -->
+    <div class="section">
+        <h3>Skills</h3>
+        <ul>
+            {% for s in r.skills %}
+            <li>{{ s }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Missing -->
+    <div class="section">
+        <h3>Missing Skills</h3>
+        <p class="missing">
+            {% if r.missing_skills %}
+                {{ r.missing_skills }}
+            {% else %}
+                None 🎉
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Parsing -->
+    <div class="section">
+        <h3>📊 Resume Insights</h3>
+        <p>🎓 Education: {{ r.education }}</p>
+        <p>💼 Experience: {{ r.experience }}</p>
+        <p>📂 Sections: {{ r.sections }}</p>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="section">
+        <h3>Suggestions</h3>
+        <ul>
+            {% for s in r.suggestions %}
+            <li>{{ s }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Chart -->
+    <canvas id="chart{{ loop.index }}"></canvas>
+
+</div>
+{% endfor %}
+
+<!-- Metrics -->
+<div class="metrics-card">
+    <h2>📊 Model Performance</h2>
+
+    {% for model, m in metrics.items() %}
+    <h3>{{ model }}</h3>
+    <ul>
+        <li>Accuracy: {{ (m.accuracy*100)|round(2) }}%</li>
+        <li>Precision: {{ (m.precision*100)|round(2) }}%</li>
+        <li>Recall: {{ (m.recall*100)|round(2) }}%</li>
+        <li>F1 Score: {{ (m.f1*100)|round(2) }}%</li>
+    </ul>
+    {% endfor %}
+</div>
+
+<button class="back-btn" onclick="window.location.href='/'">⬅ Back</button>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const results = JSON.parse('{{ results | tojson | safe }}');
+
+// Animate bars
+document.querySelectorAll('.score-fill').forEach(bar => {
+    bar.style.width = bar.getAttribute('data-value') + '%';
+});
+
+// Charts
+results.forEach((r, i) => {
+    new Chart(document.getElementById("chart" + (i+1)), {
+        type: 'bar',
+        data: {
+            labels: ['Resume Score', 'ATS Score'],
+            datasets: [{
+                data: [r.score, r.ats_score]
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, max: 100 }
+            }
+        }
+    });
+});
+</script>
+
+</body>
+</html>
